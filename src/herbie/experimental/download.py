@@ -85,8 +85,17 @@ def _download_remote_byte_range(
     response.raise_for_status()
 
     if response.status_code != 206:
-        raise Exception(
-            f"Server doesn't support range requests (status: {response.status_code})"
+        content_length = response.headers.get("Content-Length", "unknown")
+        response.close()
+        raise RuntimeError(
+            f"Range request not honored: server returned "
+            f"HTTP {response.status_code} "
+            f"(Content-Length: {content_length}). "
+            f"This can happen when a network proxy or "
+            f"VPN strips the Range header. Try downloading "
+            f"the full file first, then subset locally:\n"
+            f"  full_file = Herbie(...).download()\n"
+            f"  Herbie(...).download(search=...)"
         )
 
     with open(temp_file, "wb") as f:
